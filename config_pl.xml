@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>pdprintorder</name>
+    <displayName><![CDATA[Drukowanie zamówień i komentarze magazynowe]]></displayName>
+    <version><![CDATA[1.2.3]]></version>
+    <description><![CDATA[Drukuje dokumenty zamówień i pozwala zapisać krótki komentarz przy każdej pozycji do wydruku magazynowego.]]></description>
+    <author><![CDATA[RAFAŁ WIŚNIEWSKI]]></author>
+    <tab><![CDATA[administration]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>0</need_instance>
+</module>

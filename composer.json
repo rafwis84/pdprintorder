@@ -1,0 +1,25 @@
+{
+  "name": "rafal-wisniewski/pdprintorder",
+  "description": "Drukowanie zamówień i komentarze magazynowe dla PrestaShop 8.1.x",
+  "type": "prestashop-module",
+  "authors": [
+    {
+      "name": "RAFAŁ WIŚNIEWSKI"
+    }
+  ],
+  "require": {
+    "php": ">=8.2 <8.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "PdPrintOrder\\": "src/"
+    },
+    "classmap": [
+      "classes/"
+    ]
+  },
+  "config": {
+    "prepend-autoloader": false,
+    "sort-packages": true
+  }
+}

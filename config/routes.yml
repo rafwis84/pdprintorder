@@ -1,0 +1,23 @@
+admin_pdprintorder_bulk_invoice:
+  path: /pdprintorder/bulk/invoice
+  methods: [POST]
+  defaults:
+    _controller: 'PdPrintOrder\Controller\Admin\PdPrintOrderBulkController::bulkInvoice'
+    _legacy_controller: AdminOrders
+    _legacy_link: AdminOrders:pdprintorderBulkInvoice
+
+admin_pdprintorder_bulk_delivery:
+  path: /pdprintorder/bulk/delivery
+  methods: [POST]
+  defaults:
+    _controller: 'PdPrintOrder\Controller\Admin\PdPrintOrderBulkController::bulkDelivery'
+    _legacy_controller: AdminOrders
+    _legacy_link: AdminOrders:pdprintorderBulkDelivery
+
+admin_pdprintorder_bulk_packing:
+  path: /pdprintorder/bulk/packing
+  methods: [POST]
+  defaults:
+    _controller: 'PdPrintOrder\Controller\Admin\PdPrintOrderBulkController::bulkPacking'
+    _legacy_controller: AdminOrders
+    _legacy_link: AdminOrders:pdprintorderBulkPacking
