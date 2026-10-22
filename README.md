@@ -1,4 +1,4 @@
-# pdprintorder 1.2.4
+# pdprintorder 1.2.5
 
 Drukowanie zamówień, faktur i dokumentów WZ oraz komentarze magazynowe
 przy pozycjach zamówień. Moduł dla PrestaShop 8.1.x i PHP 8.2.
@@ -6,10 +6,21 @@ przy pozycjach zamówień. Moduł dla PrestaShop 8.1.x i PHP 8.2.
 ## Instalacja / aktualizacja
 
 Wgraj ZIP zawierający katalog `pdprintorder/` przez menedżer modułów PrestaShop.
-Przy aktualizacji wykonaj aktualizację istniejącego modułu do wersji 1.2.4;
+Przy aktualizacji wykonaj aktualizację istniejącego modułu do wersji 1.2.5;
 nie trzeba go odinstalowywać. Aktualizacja nie usuwa komentarzy i nie zmienia
 schematu bazy danych. W razie potrzeby wyczyść pamięć podręczną PrestaShop.
 Paczka zawiera autoloader; nie wymaga uruchamiania Composer na serwerze.
+
+## Poprawki w 1.2.5
+
+- Ilość „do wydania” uwzględnia zwroty zapisane w pozycjach zamówienia także
+  bez dokumentu korekty. Zwrot i odpowiadająca mu korekta nie są sumowane
+  podwójnie; ilości są ograniczone do liczby zamówionych sztuk.
+- Przyciski „Zapisz”, „Zapisz wszystkie” i „Drukuj” oczekują na ten sam trwający
+  zapis danej pozycji. Starsza odpowiedź nie nadpisuje nowszej treści komentarza,
+  a wydruk nie rusza, gdy pozostaje niezapisana zmiana.
+- Linki zapisu i pojedynczego wydruku jawnie zawierają token modułu również
+  przy wyłączonym `PS_SECURITY_TOKEN`. Kontrola tokenu i uprawnień pozostaje aktywna.
 
 ## Poprawki w 1.2.4
 

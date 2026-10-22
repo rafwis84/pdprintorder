@@ -78,6 +78,7 @@
     card.dataset.pdpoReady='1';
     var saveUrl=card.getAttribute('data-save-url');
     var idOrder=card.getAttribute('data-order-id');
+    var pendingSaves=new WeakMap();
 
     function updateCounter(input){
       var row=input.closest('tr');
@@ -97,18 +98,21 @@
       var input=row.querySelector('.pdpo-comment-input');
       var button=row.querySelector('.pdpo-save-comment');
       if(!input || !button || !saveUrl){return Promise.resolve(false);}
+      // Save, Save all and Print must wait for the same request for this row.
+      if(pendingSaves.has(row)){return pendingSaves.get(row);}
       if(!force && input.value===input.getAttribute('data-original')){return Promise.resolve(true);}
 
+      var submittedValue=input.value;
       var data=new FormData();
       data.append('id_order',idOrder);
       data.append('id_order_detail',row.getAttribute('data-detail-id'));
-      data.append('comment',input.value);
+      data.append('comment',submittedValue);
 
       button.disabled=true;
       input.disabled=true;
       setStatus(row,'Zapisywanie…','is-saving');
 
-      return fetch(saveUrl,{
+      var request=fetch(saveUrl,{
         method:'POST',
         credentials:'same-origin',
         headers:{'X-Requested-With':'XMLHttpRequest'},
@@ -135,10 +139,13 @@
         });
       })
       .then(function(json){
-        if(typeof json.comment==='string'){
-          input.value=json.comment;
+        input.setAttribute('data-original',json.comment);
+        if(input.value!==submittedValue){
+          updateCounter(input);
+          setStatus(row,'Zapisano poprzednią treść. Nowa zmiana wymaga zapisu.','');
+          return false;
         }
-        input.setAttribute('data-original',input.value);
+        input.value=json.comment;
         updateCounter(input);
         setStatus(row,'Zapisano','is-ok');
         return true;
@@ -148,9 +155,12 @@
         return false;
       })
       .finally(function(){
+        pendingSaves.delete(row);
         button.disabled=false;
         input.disabled=false;
       });
+      pendingSaves.set(row,request);
+      return request;
     }
 
     function saveAllChanged(){

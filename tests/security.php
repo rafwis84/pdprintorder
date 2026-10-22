@@ -36,6 +36,7 @@ namespace {
     class Context
     {
         public ?Employee $employee;
+        public object $link;
         public function __construct() { $this->employee = new Employee(); }
         public static function getContext(): self { return $GLOBALS['context']; }
     }
@@ -120,12 +121,17 @@ namespace {
             exit;
         }
     }
+    class Module
+    {
+        public Context $context;
+    }
 
     require_once __DIR__ . '/../classes/PdPrintOrderAccess.php';
     require_once __DIR__ . '/../classes/PdPrintOrderPdf.php';
     require_once __DIR__ . '/../classes/PdPrintOrderPackingPdf.php';
     require_once __DIR__ . '/../controllers/admin/AdminPdPrintOrderController.php';
     require_once __DIR__ . '/../src/Controller/Admin/PdPrintOrderBulkController.php';
+    require_once __DIR__ . '/../pdprintorder.php';
 
     $context = new Context();
 
@@ -196,6 +202,40 @@ namespace {
     $request = new \Symfony\Component\HttpFoundation\Request(['order_orders_bulk' => [1, 2]]);
     foreach (['bulkInvoice', 'bulkDelivery', 'bulkPacking'] as $method) {
         check($controller->$method($request)->status === 403, "$method: access denial not preserved in HTTP response");
+    }
+
+    $buildRows = new \ReflectionMethod(PdPrintOrderPackingPdf::class, 'buildProductRows');
+    foreach ([
+        // ordered, refunded, returned, credit-slip quantity, expected remaining
+        [5, 0, 0, 0, 5], [5, 2, 1, 0, 2], [5, 2, 0, 2, 3],
+        [5, 0, 0, 2, 3], [5, 2, 1, 2, 2], [5, 0, 5, 0, 0],
+        [5, 9, 9, 9, 0], [5, -1, -1, -1, 5],
+    ] as [$ordered, $refunded, $returned, $slip, $expected]) {
+        $row = $buildRows->invoke(null, [[
+            'id_order_detail' => 11, 'product_quantity' => $ordered,
+            'product_quantity_refunded' => $refunded, 'product_quantity_return' => $returned,
+        ]], [], [], [11 => $slip])[0];
+        check($row['product_quantity'] - $row['_qty_refunded'] === $expected, 'Wrong remaining quantity after refund/return');
+    }
+
+    $module = (new \ReflectionClass(PdPrintOrder::class))->newInstanceWithoutConstructor();
+    $module->context = $context;
+    $actionUrl = new \ReflectionMethod(PdPrintOrder::class, 'getOrderActionUrl');
+    foreach ([true, false] as $tokensEnabled) {
+        $context->link = new class($tokensEnabled) {
+            public function __construct(private bool $tokensEnabled) {}
+            public function getAdminLink($controller, $withToken = true, $sfParams = [], $params = []): string
+            {
+                if ($this->tokensEnabled && $withToken) { $params['token'] = Tools::getAdminTokenLite($controller); }
+                return '/admin/index.php?' . http_build_query(['controller' => $controller] + $params);
+            }
+        };
+        foreach (['saveComment', 'printOrder'] as $action) {
+            parse_str(parse_url($actionUrl->invoke($module, $action, $action === 'printOrder' ? 1 : 0), PHP_URL_QUERY), $query);
+            check(($query['token'] ?? '') === 'valid-token', 'Missing CSRF token when global tokens are disabled');
+            check($query['ajax'] === '1' && $query['action'] === $action, 'Wrong action URL');
+            check($action !== 'printOrder' || $query['id_order'] === '1', 'Missing order ID in print URL');
+        }
     }
     echo "PASS: $checks PHP regression checks\n";
 }

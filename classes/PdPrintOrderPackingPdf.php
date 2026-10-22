@@ -560,16 +560,26 @@ class PdPrintOrderPackingPdf
                 $gross = (float) $detail['product_price'];
             }
 
+            $orderedQty = max(0, (int) ($detail['product_quantity'] ?? 0));
+            $detailRefundedQty = max(0, (int) ($detail['product_quantity_refunded'] ?? 0))
+                + max(0, (int) ($detail['product_quantity_return'] ?? 0));
+            // Credit slips and order_detail usually describe the same refund.
+            // Use the larger count, not their sum; refunds need not create a slip.
+            $refundedQty = min($orderedQty, max(
+                $detailRefundedQty,
+                (int) ($refundedQtyMap[$idOrderDetail] ?? 0)
+            ));
+
             $products[] = [
                 'id_order_detail' => $idOrderDetail,
                 'product_id' => $idProduct,
                 'product_name' => (string) ($detail['product_name'] ?? ''),
                 'product_reference' => (string) ($detail['product_reference'] ?? ''),
                 'product_ean13' => $ean,
-                'product_quantity' => (int) ($detail['product_quantity'] ?? 0),
+                'product_quantity' => $orderedQty,
                 '_manufacturer' => (string) ($meta['manufacturer'] ?? ''),
                 '_comment' => (string) ($comments[$idOrderDetail] ?? ''),
-                '_qty_refunded' => (int) ($refundedQtyMap[$idOrderDetail] ?? 0),
+                '_qty_refunded' => $refundedQty,
                 '_unit_gross' => $gross,
             ];
         }

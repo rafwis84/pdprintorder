@@ -16,7 +16,7 @@ class PdPrintOrder extends Module
     {
         $this->name = 'pdprintorder';
         $this->tab = 'administration';
-        $this->version = '1.2.4';
+        $this->version = '1.2.5';
         $this->author = 'RAFAŁ WIŚNIEWSKI';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -132,8 +132,8 @@ class PdPrintOrder extends Module
             ];
         }
 
-        $saveUrl = $this->context->link->getAdminLink('AdminPdPrintOrder') . '&ajax=1&action=saveComment';
-        $printUrl = $this->context->link->getAdminLink('AdminPdPrintOrder') . '&ajax=1&action=printOrder&id_order=' . $idOrder;
+        $saveUrl = $this->getOrderActionUrl('saveComment');
+        $printUrl = $this->getOrderActionUrl('printOrder', $idOrder);
 
         $this->context->smarty->assign([
             'pdpo_id_order' => $idOrder,
@@ -195,13 +195,28 @@ class PdPrintOrder extends Module
             return '';
         }
 
-        $printUrl = $this->context->link->getAdminLink('AdminPdPrintOrder') . '&ajax=1&action=printOrder&id_order=' . $idOrder;
+        $printUrl = $this->getOrderActionUrl('printOrder', $idOrder);
 
         $this->context->smarty->assign([
             'pdpo_print_link' => $printUrl,
         ]);
 
         return $this->fetch('module:pdprintorder/views/templates/admin/order_buttons.tpl');
+    }
+
+    private function getOrderActionUrl(string $action, int $idOrder = 0): string
+    {
+        // Keep this module's CSRF protection even when global URL tokens are disabled.
+        $params = [
+            'token' => Tools::getAdminTokenLite('AdminPdPrintOrder'),
+            'ajax' => 1,
+            'action' => $action,
+        ];
+        if ($idOrder > 0) {
+            $params['id_order'] = $idOrder;
+        }
+
+        return $this->context->link->getAdminLink('AdminPdPrintOrder', false, [], $params);
     }
 
     public function getContent(): string
