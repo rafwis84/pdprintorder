@@ -1,15 +1,31 @@
-# pdprintorder 1.2.5
+# pdprintorder 1.2.6
 
 Drukowanie zamówień, faktur i dokumentów WZ oraz komentarze magazynowe
 przy pozycjach zamówień. Moduł dla PrestaShop 8.1.x i PHP 8.2.
 
 ## Instalacja / aktualizacja
 
-Wgraj ZIP zawierający katalog `pdprintorder/` przez menedżer modułów PrestaShop.
-Przy aktualizacji wykonaj aktualizację istniejącego modułu do wersji 1.2.5;
+Wgraj `pdprintorder-1.2.6.zip` zawierający katalog `pdprintorder/` przez menedżer modułów PrestaShop.
+Przy aktualizacji wykonaj aktualizację istniejącego modułu do wersji 1.2.6;
 nie trzeba go odinstalowywać. Aktualizacja nie usuwa komentarzy i nie zmienia
 schematu bazy danych. W razie potrzeby wyczyść pamięć podręczną PrestaShop.
 Paczka zawiera autoloader; nie wymaga uruchamiania Composer na serwerze.
+
+## Poprawki w 1.2.6
+
+- Podsumowanie kwot uwzględnia zwroty produktów zapisane przy pozycjach
+  zamówienia bez dokumentu korekty. Kwoty są porównywane osobno dla każdej
+  pozycji, aby uwzględnić mieszane zwroty i nie odejmować ich podwójnie.
+  Koszty zwróconej wysyłki są odczytywane z zapisanych dokumentów korekt.
+- Generowanie PDF bezpiecznie obsługuje zagnieżdżone i nieusuwalne bufory
+  wyjścia. Nieusuwalny bufor jest czyszczony, jeśli pozwala na to serwer.
+  Gdy nie da się usunąć wcześniejszej treści, generowanie zostaje przerwane
+  komunikatem błędu zamiast zawieszenia lub pliku PDF z domieszką HTML.
+
+## Konwencja paczek
+
+Paczka ma nazwę `nazwa-modułu-wersja.zip`, a w środku jeden katalog
+`nazwa-modułu/` ze wszystkimi plikami instalacyjnymi.
 
 ## Poprawki w 1.2.5
 
@@ -34,6 +50,12 @@ Paczka zawiera autoloader; nie wymaga uruchamiania Composer na serwerze.
 
 ## Testy regresji (repozytorium)
 
-`php tests/security.php` i `node tests/comments.cjs` sprawdzają zabezpieczenia
+`php tests/security.php`, `php tests/refunds.php`, `php tests/output.php`
+i `node tests/comments.cjs` sprawdzają zabezpieczenia, kwoty zwrotów, bufory
 oraz obsługę odpowiedzi przez rzeczywisty kod modułu z kontrolowanymi atrapami
-usług PrestaShop i przeglądarki. Nie zastępują testów integracyjnych w sklepie.
+usług PrestaShop i przeglądarki.
+
+`php tests/refunds.php --database` wykonuje zapytania SQL na bazie wskazanej
+przez `PDPO_TEST_DSN` (opcjonalnie `PDPO_TEST_DB_USER`, `PDPO_TEST_DB_PASSWORD`).
+Test używa wyłącznie tabel tymczasowych `pdpo_test_*` w swoim połączeniu.
+Nie zastępuje to testów integracyjnych w działającym sklepie.

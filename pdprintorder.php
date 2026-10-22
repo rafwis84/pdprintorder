@@ -16,7 +16,7 @@ class PdPrintOrder extends Module
     {
         $this->name = 'pdprintorder';
         $this->tab = 'administration';
-        $this->version = '1.2.5';
+        $this->version = '1.2.6';
         $this->author = 'RAFAŁ WIŚNIEWSKI';
         $this->need_instance = 0;
         $this->bootstrap = true;

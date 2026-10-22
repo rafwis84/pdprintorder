@@ -1,5 +1,25 @@
 # Historia zmian
 
+## 1.2.6 — 2026-10-22
+
+- Podsumowanie wydruku magazynowego uwzględnia kwoty zwrotów produktów bez
+  dokumentu korekty, zapisane w `order_detail.total_refunded_tax_incl`.
+  Zachowano kwoty korekt i wysyłki; tylko brakująca część zwrotu danej pozycji
+  jest dodawana do podsumowania, bez podwójnego odejmowania.
+- Błąd odczytu danych zwrotów nie jest traktowany jako zerowy zwrot.
+- Wspólna obsługa buforów dla wydruków magazynowych, faktur i WZ usuwa ryzyko
+  nieskończonej pętli przy buforze, którego nie można zamknąć. Bezpieczne
+  czyszczenie zachowuje bufory zarządzane przez serwer. Brak możliwości
+  usunięcia wcześniejszej treści powoduje kontrolowany błąd, a nie uszkodzony PDF.
+- Dodano testy kwot (także mieszanych zwrotów i korekt), rzeczywistych zapytań
+  SQL oraz buforów usuwalnych, nieusuwalnych i zagnieżdżonych dla obu ścieżek PDF.
+- Paczka instalacyjna ma nazwę `pdprintorder-1.2.6.zip` i katalog główny
+  `pdprintorder/`, zgodnie z konwencją użytkownika dla wszystkich projektów.
+
+Aktualizacja nie zmienia schematu bazy ani nie usuwa komentarzy. Kwoty wysyłki
+są uwzględniane na podstawie zapisanych korekt; nie są szacowane na podstawie
+liczby zwróconych sztuk. Pełny test w działającym sklepie pozostaje odrębny.
+
 ## 1.2.5 — 2026-10-22
 
 - Poprawiono liczbę sztuk do wydania po zwrotach bez dokumentu korekty.

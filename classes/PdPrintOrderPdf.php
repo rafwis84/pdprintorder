@@ -4,6 +4,7 @@ if (!defined('_PS_VERSION_')) {
 }
 
 require_once __DIR__ . '/PdPrintOrderAccess.php';
+require_once __DIR__ . '/PdPrintOrderOutput.php';
 
 class PdPrintOrderPdf
 {
@@ -60,8 +61,6 @@ class PdPrintOrderPdf
 
     private static function clearOutputBuffers(): void
     {
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
+        PdPrintOrderOutput::clearBuffers();
     }
 }

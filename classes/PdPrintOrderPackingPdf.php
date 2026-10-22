@@ -5,6 +5,7 @@ if (!defined('_PS_VERSION_')) {
 
 require_once __DIR__ . '/PdPrintOrderCommentRepository.php';
 require_once __DIR__ . '/PdPrintOrderAccess.php';
+require_once __DIR__ . '/PdPrintOrderOutput.php';
 
 class PdPrintOrderPackingPdf
 {
@@ -697,9 +698,39 @@ class PdPrintOrderPackingPdf
              WHERE `id_order` = ' . (int) $idOrder
         );
 
+        if (!is_array($rows)) {
+            throw new RuntimeException('Nie udało się odczytać kwot korekt zamówienia.');
+        }
+
         $row = is_array($rows) && !empty($rows) ? (array) $rows[0] : [];
-        $refundedProducts = (float) ($row['refunded_products'] ?? 0);
-        $refundedShipping = (float) ($row['refunded_shipping'] ?? 0);
+        $refundedProducts = max(0.0, (float) ($row['refunded_products'] ?? 0));
+        $refundedShipping = max(0.0, (float) ($row['refunded_shipping'] ?? 0));
+
+        // Keep recorded credit-slip totals, then add only refunds not already
+        // represented by slips for the same order detail. Comparing whole-order
+        // totals would miss separate refunds affecting different products.
+        $detailRows = Db::getInstance()->executeS(
+            'SELECT od.`id_order_detail`, od.`total_refunded_tax_incl`,
+                    COALESCE(slips.`refunded_amount`, 0) AS `slip_refunded_amount`
+             FROM `' . _DB_PREFIX_ . 'order_detail` od
+             LEFT JOIN (
+                 SELECT osd.`id_order_detail`, SUM(osd.`amount_tax_incl`) AS `refunded_amount`
+                 FROM `' . _DB_PREFIX_ . 'order_slip_detail` osd
+                 INNER JOIN `' . _DB_PREFIX_ . 'order_slip` os
+                   ON os.`id_order_slip` = osd.`id_order_slip`
+                 WHERE os.`id_order` = ' . (int) $idOrder . '
+                 GROUP BY osd.`id_order_detail`
+             ) slips ON slips.`id_order_detail` = od.`id_order_detail`
+             WHERE od.`id_order` = ' . (int) $idOrder
+        );
+        if (!is_array($detailRows)) {
+            throw new RuntimeException('Nie udało się odczytać kwot zwrotów pozycji zamówienia.');
+        }
+        foreach ($detailRows as $detail) {
+            $recordedRefund = max(0.0, (float) ($detail['total_refunded_tax_incl'] ?? 0));
+            $slipRefund = max(0.0, (float) ($detail['slip_refunded_amount'] ?? 0));
+            $refundedProducts += max(0.0, $recordedRefund - $slipRefund);
+        }
 
         return [
             'refunded_products' => $refundedProducts,
@@ -812,8 +843,6 @@ class PdPrintOrderPackingPdf
 
     private static function clearOutputBuffers(): void
     {
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
+        PdPrintOrderOutput::clearBuffers();
     }
 }
