@@ -28,7 +28,7 @@
 </div>
 
 <div class="panel">
-  <h3><i class="icon-check"></i> Funkcje wersji 1.2.2</h3>
+  <h3><i class="icon-check"></i> Funkcje wersji {$pdpo_version|escape:'htmlall':'UTF-8'}</h3>
   <ul style="line-height:1.9;margin-bottom:0">
     <li>krótki komentarz przy każdej pozycji zamówienia,</li>
     <li>kolumna „Komentarz” obok „Nazwa” na wydruku magazynowym,</li>

@@ -3,19 +3,17 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/PdPrintOrderAccess.php';
+
 class PdPrintOrderPdf
 {
     public static function render(string $type, array $orderIds, Context $context): void
     {
         $type = $type === 'delivery' ? 'delivery' : 'invoice';
         $documents = [];
+        $orders = PdPrintOrderAccess::getOrders($orderIds, $context);
 
-        foreach ($orderIds as $idOrder) {
-            $order = new Order((int) $idOrder);
-            if (!Validate::isLoadedObject($order)) {
-                continue;
-            }
-
+        foreach ($orders as $order) {
             $invoices = $order->getInvoicesCollection();
             foreach ($invoices as $invoice) {
                 if (!Validate::isLoadedObject($invoice)) {

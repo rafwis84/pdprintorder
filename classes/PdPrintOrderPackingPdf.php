@@ -4,6 +4,7 @@ if (!defined('_PS_VERSION_')) {
 }
 
 require_once __DIR__ . '/PdPrintOrderCommentRepository.php';
+require_once __DIR__ . '/PdPrintOrderAccess.php';
 
 class PdPrintOrderPackingPdf
 {
@@ -30,6 +31,8 @@ class PdPrintOrderPackingPdf
             throw new Exception('Brak zamówień do wydruku.');
         }
 
+        $orders = PdPrintOrderAccess::getOrders($orderIds, $context);
+
         if (!PdPrintOrderCommentRepository::ensureSchema()) {
             throw new Exception('Nie udało się przygotować tabeli komentarzy modułu.');
         }
@@ -48,12 +51,7 @@ class PdPrintOrderPackingPdf
 
         $printedOrders = 0;
 
-        foreach ($orderIds as $idOrder) {
-            $order = new Order((int) $idOrder);
-            if (!Validate::isLoadedObject($order)) {
-                continue;
-            }
-
+        foreach ($orders as $order) {
             ++$printedOrders;
             $pdf->AddPage();
             self::renderOrder($pdf, $order, $context);

@@ -42,6 +42,8 @@ class PdPrintOrderBulkController
 
         try {
             \PdPrintOrderPackingPdf::render($orderIds, \Context::getContext());
+        } catch (\PdPrintOrderAccessException $exception) {
+            return new Response($exception->getMessage(), $exception->getCode(), ['Content-Type' => 'text/plain; charset=UTF-8']);
         } catch (\Throwable $exception) {
             return $this->errorResponse($exception);
         }
@@ -60,6 +62,8 @@ class PdPrintOrderBulkController
 
         try {
             \PdPrintOrderPdf::render($type, $orderIds, \Context::getContext());
+        } catch (\PdPrintOrderAccessException $exception) {
+            return new Response($exception->getMessage(), $exception->getCode(), ['Content-Type' => 'text/plain; charset=UTF-8']);
         } catch (\Throwable $exception) {
             return $this->errorResponse($exception);
         }

@@ -121,27 +121,13 @@
             json=body ? JSON.parse(body) : null;
           }catch(parseError){
             var htmlBody=/<!doctype|<html/i.test(body || '');
-            var loginBody=/name=[\"']passwd[\"']|id=[\"']login_form[\"']|zaloguj\s+si[eę]|connexion/i.test(body || '');
-
-            // Na części instalacji PrestaShop 8.1 legacy kontroler zapisuje dane,
-            // a następnie warstwa BO zwraca HTML panelu. Sam zapis jest wtedy
-            // prawidłowy. Traktujemy odpowiedź 2xx bez strony logowania jako
-            // udany zapis, aby nie blokować wydruku wymagającego zapisanych uwag.
-            if(response.ok && htmlBody && !loginBody){
-              return {
-                success:true,
-                comment:input.value,
-                legacy_html_response:true
-              };
-            }
-
             if(response.redirected || htmlBody){
               throw new Error('Sesja panelu lub endpoint zapisu wymaga odświeżenia strony zamówienia.');
             }
             throw new Error('Nieprawidłowa odpowiedź serwera podczas zapisu komentarza.');
           }
 
-          if(!json || !response.ok || !json.success){
+          if(response.redirected || !json || !response.ok || json.success!==true || typeof json.comment!=='string'){
             throw new Error((json && json.message) ? json.message : 'Nie udało się zapisać komentarza.');
           }
 

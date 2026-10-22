@@ -3,6 +3,8 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
+require_once __DIR__ . '/../../classes/PdPrintOrderAccess.php';
+
 class AdminPdPrintOrderController extends ModuleAdminController
 {
     public function __construct()
@@ -55,14 +57,13 @@ class AdminPdPrintOrderController extends ModuleAdminController
                 $this->sendJson(false, 'Brak prawidłowego ID zamówienia.', 400);
             }
 
-            $order = new Order($idOrder);
-            if (!Validate::isLoadedObject($order)) {
-                $this->sendJson(false, 'Nie znaleziono zamówienia.', 404);
-            }
+            PdPrintOrderAccess::getOrders([$idOrder], $this->context);
 
             require_once _PS_MODULE_DIR_ . 'pdprintorder/classes/PdPrintOrderPackingPdf.php';
             PdPrintOrderPackingPdf::render([$idOrder], $this->context);
             exit;
+        } catch (PdPrintOrderAccessException $exception) {
+            $this->sendJson(false, $exception->getMessage(), $exception->getCode());
         } catch (Throwable $exception) {
             PrestaShopLogger::addLog(
                 'pdprintorder: błąd generowania PDF: ' . $exception->getMessage(),
@@ -79,16 +80,12 @@ class AdminPdPrintOrderController extends ModuleAdminController
     public function ajaxProcessSaveComment(): void
     {
         try {
-            $this->assertValidRequest();
+            $this->assertValidRequest('update');
             if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST') {
                 $this->sendJson(false, 'Komentarz można zapisać wyłącznie metodą POST.', 405);
             }
 
             require_once _PS_MODULE_DIR_ . 'pdprintorder/classes/PdPrintOrderCommentRepository.php';
-
-            if (!PdPrintOrderCommentRepository::ensureSchema()) {
-                $this->sendJson(false, 'Nie udało się przygotować tabeli komentarzy.', 500);
-            }
 
             $idOrder = (int) Tools::getValue('id_order');
             $idOrderDetail = (int) Tools::getValue('id_order_detail');
@@ -99,10 +96,7 @@ class AdminPdPrintOrderController extends ModuleAdminController
                 $this->sendJson(false, 'Brak wymaganych danych pozycji zamówienia.', 400);
             }
 
-            $order = new Order($idOrder);
-            if (!Validate::isLoadedObject($order)) {
-                $this->sendJson(false, 'Nie znaleziono zamówienia.', 404);
-            }
+            PdPrintOrderAccess::getOrders([$idOrder], $this->context, 'update');
 
             if (!PdPrintOrderCommentRepository::saveComment($idOrder, $idOrderDetail, $comment, $idEmployee)) {
                 $this->sendJson(false, 'Nie udało się zapisać komentarza. Sprawdź, czy pozycja należy do tego zamówienia.', 400);
@@ -118,6 +112,8 @@ class AdminPdPrintOrderController extends ModuleAdminController
             $this->sendJson(true, 'Komentarz zapisany.', 200, [
                 'comment' => $normalizedComment,
             ]);
+        } catch (PdPrintOrderAccessException $exception) {
+            $this->sendJson(false, $exception->getMessage(), $exception->getCode());
         } catch (Throwable $exception) {
             PrestaShopLogger::addLog(
                 'pdprintorder: błąd zapisu komentarza: ' . $exception->getMessage(),
@@ -137,11 +133,9 @@ class AdminPdPrintOrderController extends ModuleAdminController
             || !empty($this->ajax);
     }
 
-    private function assertValidRequest(): void
+    private function assertValidRequest(string $permission = 'read'): void
     {
-        if (!isset($this->context->employee) || !Validate::isLoadedObject($this->context->employee)) {
-            $this->sendJson(false, 'Sesja pracownika wygasła. Zaloguj się ponownie do panelu.', 401);
-        }
+        PdPrintOrderAccess::assertPermission($this->context, $permission);
 
         $providedToken = (string) Tools::getValue('token', '');
         $expectedToken = (string) Tools::getAdminTokenLite('AdminPdPrintOrder');
@@ -158,10 +152,15 @@ class AdminPdPrintOrderController extends ModuleAdminController
             header('Cache-Control: no-store, no-cache, must-revalidate');
         }
 
-        $payload = Tools::jsonEncode(array_merge([
+        $payload = json_encode(array_merge([
             'success' => $success,
             'message' => $message,
-        ], $extra));
+        ], $extra), JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+
+        if ($payload === false) {
+            http_response_code(500);
+            $payload = '{"success":false,"message":"Nie udało się przygotować odpowiedzi serwera."}';
+        }
 
         if (method_exists($this, 'ajaxDie')) {
             $this->ajaxDie($payload);
